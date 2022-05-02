@@ -24,7 +24,7 @@ func (s *System) Objects() []*Object {
 }
 
 // update loop
-func (a *System) Update() {
+func (a *System) Run() {
 	fps := time.Duration(time.Second / 60)
 	ticker := time.NewTicker(fps)
 	startTime := time.Now().UnixNano()

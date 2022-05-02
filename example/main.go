@@ -8,20 +8,38 @@ import (
 	"github.com/go-p5/p5"
 )
 
-type world struct{}
+type world struct {
+	System       *achilles.System
+	WorldObjects []*WorldObject
+}
+
+func (w *world) SetSystem(s *achilles.System) {
+	w.System = s
+}
+
+func (w *world) AddObject(o *WorldObject) {
+	w.System.AddObject(o.Body)
+	w.WorldObjects = append(w.WorldObjects, o)
+}
+
+type WorldObject struct {
+	Body  *achilles.Object
+	Color color.RGBA
+	IsHit bool
+}
 
 var system *achilles.System
-var circleObj *achilles.Object
-var circleObj2 *achilles.Object
+var w *world
+var circleObj *WorldObject
+var circleObj2 *WorldObject
 var speedX = float64(100)
-var isHitToggle = false
 var dirX = 1.0
 
 func (u *world) Update(dt float64) {
-	if circleObj.GetPosition().X > 300 {
+	if circleObj.Body.GetPosition().X > 300 {
 		dirX = -1.0
 	}
-	if circleObj.GetPosition().X < 0 {
+	if circleObj.Body.GetPosition().X < 0 {
 		dirX = 1.0
 	}
 
@@ -29,27 +47,34 @@ func (u *world) Update(dt float64) {
 		X: speedX * dirX * dt,
 		Y: 0,
 	}
-	circleObj.Move(v)
-	if circleObj.GetCircle().IsInterSectOtherCircle(circleObj2.GetCircle()) {
-		if !isHitToggle {
-			isHitToggle = true
-		}
+	circleObj.Body.Move(v)
+	if circleObj.Body.GetCircle().IsInterSectOtherCircle(circleObj2.Body.GetCircle()) {
+		circleObj.IsHit = true
+		circleObj.Color = color.RGBA{R: 255, A: 208}
 	} else {
-		isHitToggle = false
+		circleObj.IsHit = false
+		circleObj.Color = color.RGBA{B: 255, A: 208}
 	}
 }
 
 func main() {
-	w := &world{}
+	w = &world{}
 	system = achilles.NewSystem(w)
-	system.Update()
+	w.SetSystem(system)
+
+	system.Run()
 	p5.Run(setup, draw)
 }
 
-func NewCircleObject(x, y, r float64) *achilles.Object {
+func NewCircleObject(x, y, r float64) *WorldObject {
 	circle := geom.NewCircle(x, y, r)
 	o := achilles.NewObject(circle, x, y)
-	return o
+	obj := &WorldObject{
+		Body: o,
+	}
+
+	obj.Color = color.RGBA{B: 255, A: 208} // blue
+	return obj
 }
 
 func setup() {
@@ -57,22 +82,25 @@ func setup() {
 	p5.Background(color.Gray{Y: 220})
 	circleObj = NewCircleObject(50, 50, 16)
 	circleObj2 = NewCircleObject(150, 50, 48)
-	system.AddObject(circleObj)
-	system.AddObject(circleObj2)
+
+	// add object to world
+	w.AddObject(circleObj2)
+	w.AddObject(circleObj)
 }
 
 func draw() {
 	p5.StrokeWidth(2)
-	p5.Fill(color.RGBA{R: 255, A: 208})
-	p5.Circle(circleObj.GetCircle().X, circleObj.GetCircle().Y, circleObj.GetCircle().Diameter())
+	for _, obj := range w.WorldObjects {
+		switch obj.Body.GetShape().(type) {
+		case *geom.Circle:
+			drawCircle(obj.Body.GetCircle(), obj.Color)
+		}
 
-	if isHitToggle {
-		p5.Fill(color.RGBA{B: 255, A: 208})
-		p5.Circle(circleObj2.GetCircle().X, circleObj2.GetCircle().Y, circleObj2.GetCircle().Diameter())
-
-	} else {
-		p5.Fill(color.RGBA{G: 255, A: 208})
-		p5.Circle(circleObj2.GetCircle().X, circleObj2.GetCircle().Y, circleObj2.GetCircle().Diameter())
 	}
 
+}
+
+func drawCircle(circle *geom.Circle, c color.RGBA) {
+	p5.Fill(c)
+	p5.Circle(circle.X, circle.Y, circle.Diameter())
 }
