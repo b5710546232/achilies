@@ -5,8 +5,8 @@ import (
 )
 
 type System struct {
-	world   World
-	objects []*Object
+	world World
+	Bodys []*Body
 }
 
 func NewSystem(w World) *System {
@@ -15,12 +15,12 @@ func NewSystem(w World) *System {
 	}
 }
 
-func (s *System) AddObject(o *Object) {
-	s.objects = append(s.objects, o)
+func (s *System) AddBody(o *Body) {
+	s.Bodys = append(s.Bodys, o)
 }
 
-func (s *System) Objects() []*Object {
-	return s.objects
+func (s *System) Bodies() []*Body {
+	return s.Bodys
 }
 
 // update loop

@@ -9,29 +9,30 @@ import (
 )
 
 type world struct {
-	System       *achilles.System
-	WorldObjects []*WorldObject
+	System  *achilles.System
+	Objects []*Object
 }
 
 func (w *world) SetSystem(s *achilles.System) {
 	w.System = s
 }
 
-func (w *world) AddObject(o *WorldObject) {
-	w.System.AddObject(o.Body)
-	w.WorldObjects = append(w.WorldObjects, o)
+func (w *world) AddBody(o *Object) {
+	w.System.AddBody(o.Body)
+	w.Objects = append(w.Objects, o)
 }
 
-type WorldObject struct {
-	Body  *achilles.Object
-	Color color.RGBA
-	IsHit bool
+type Object struct {
+	Body     *achilles.Body
+	Color    color.RGBA
+	IsHit    bool
+	Diameter float64
 }
 
 var system *achilles.System
 var w *world
-var circleObj *WorldObject
-var circleObj2 *WorldObject
+var circleObj *Object
+var circleObj2 *Object
 var speedX = float64(100)
 var dirX = 1.0
 
@@ -48,7 +49,7 @@ func (u *world) Update(dt float64) {
 		Y: 0,
 	}
 	circleObj.Body.Move(v)
-	if circleObj.Body.GetCircle().IsInterSectOtherCircle(circleObj2.Body.GetCircle()) {
+	if circleObj.Body.Intersect(circleObj2.Body) {
 		circleObj.IsHit = true
 		circleObj.Color = color.RGBA{R: 255, A: 208}
 	} else {
@@ -66,11 +67,12 @@ func main() {
 	p5.Run(setup, draw)
 }
 
-func NewCircleObject(x, y, r float64) *WorldObject {
+func NewCircleBody(x, y, r float64) *Object {
 	circle := geom.NewCircle(x, y, r)
-	o := achilles.NewObject(circle, x, y)
-	obj := &WorldObject{
-		Body: o,
+	o := achilles.NewBody(circle, x, y)
+	obj := &Object{
+		Body:     o,
+		Diameter: r * 2,
 	}
 
 	obj.Color = color.RGBA{B: 255, A: 208} // blue
@@ -80,27 +82,28 @@ func NewCircleObject(x, y, r float64) *WorldObject {
 func setup() {
 	p5.Canvas(400, 400)
 	p5.Background(color.Gray{Y: 220})
-	circleObj = NewCircleObject(50, 50, 16)
-	circleObj2 = NewCircleObject(150, 50, 48)
+	circleObj = NewCircleBody(50, 50, 16)
+	circleObj2 = NewCircleBody(150, 50, 48)
 
-	// add object to world
-	w.AddObject(circleObj2)
-	w.AddObject(circleObj)
+	// add Body to world
+	w.AddBody(circleObj2)
+	w.AddBody(circleObj)
 }
 
 func draw() {
 	p5.StrokeWidth(2)
-	for _, obj := range w.WorldObjects {
+	for _, obj := range w.Objects {
 		switch obj.Body.GetShape().(type) {
 		case *geom.Circle:
-			drawCircle(obj.Body.GetCircle(), obj.Color)
+			drawCircle(obj, obj.Color)
 		}
 
 	}
 
 }
 
-func drawCircle(circle *geom.Circle, c color.RGBA) {
+func drawCircle(obj *Object, c color.RGBA) {
 	p5.Fill(c)
-	p5.Circle(circle.X, circle.Y, circle.Diameter())
+	pos := obj.Body.GetPosition()
+	p5.Circle(pos.X, pos.Y, obj.Diameter)
 }
