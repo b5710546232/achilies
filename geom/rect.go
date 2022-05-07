@@ -1,5 +1,7 @@
 package geom
 
+import "github.com/b5710546232/achilies/collision"
+
 type Rect struct {
 	X float64
 	Y float64
@@ -57,4 +59,12 @@ func (r *Rect) GetTopRight() Point {
 		X: r.GetRight(),
 		Y: r.GetTop(),
 	}
+}
+
+func (r *Rect) ContainsPoint(point *Point) bool {
+	return collision.IntersectsRectPoint(r, point)
+}
+
+func (r *Rect) IntersectsRect(other *Rect) bool {
+	return collision.IntersectsRectRect(r, other)
 }

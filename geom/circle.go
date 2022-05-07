@@ -35,3 +35,7 @@ func (c *Circle) IntersectOtherCircle(other *Circle) bool {
 	dist := c.GetPosition().Distant(other.GetPosition())
 	return dist < c.Radius+other.Radius
 }
+
+func (c *Circle) GetRadius() float64 {
+	return c.Radius * 2
+}
